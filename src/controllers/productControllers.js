@@ -80,4 +80,12 @@ const deleteProduct = (req, res) => {
   res.json({ message: "Product deleted successfully" });
 };
 
-export { getProducts, getProductById, addProduct, updateProduct, deleteProduct };
+// get products by category
+
+const getProductsByCategory = (req, res) => {
+  const category = req.params.category.toLowerCase();
+  const filteredProducts = products.filter((p) => p.category.toLowerCase() === category);
+  res.json(filteredProducts);
+};
+
+export { getProducts, getProductById, addProduct, updateProduct, deleteProduct, getProductsByCategory };
