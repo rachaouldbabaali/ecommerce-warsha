@@ -1,17 +1,24 @@
-const errorMiddleware = (err, req, res, next) => { 
-    console.log("Error middleware called");
-    console.error('stack:', err.stack);
-    let status = err.status || 500;
-    
-    if( err.name === 'ValidationError') {
-        status = 400;
-        message = " error from validation";
-    }
+// Error Handling Middleware
+// This middleware catches ALL errors from your routes and controllers
+// It must be the LAST middleware in app.js
 
-    res.status(300).json({
-        message: err.message || 'Internal Server Error',
-        status: status
-    });
-}
+// A simple error handling function
+const errorMiddleware = (err, req, res, next) => {
+  // Set default status code to 500 (server error) if not provided
+  const statusCode = err.statusCode || 500;
+
+  // Set a default error message
+  const message = err.message || "Something went wrong!";
+
+  // Log the error to console (so we can see what happened)
+  console.error("❌ ERROR:", message);
+
+  // Send error response back to client
+  res.status(statusCode).json({
+    success: false,
+    message: message,
+    statusCode: statusCode,
+  });
+};
 
 export default errorMiddleware;

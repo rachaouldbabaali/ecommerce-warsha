@@ -1,97 +1,181 @@
-// product related controller functions will be here
-import express from "express";
+// Product Controllers
+// These functions handle all product-related requests
+
 import products from "../data/mockproductData.js";
-import errorMiddleware from "../middlewares/errorMiddleware.js";
-const app = express();
 
-// use error middleware
-app.use(errorMiddleware);
-
+// 1. GET ALL PRODUCTS
 const getProducts = (req, res) => {
-  res.json(products);
+  res.json({
+    success: true,
+    data: products,
+  });
 };
 
-// get product by id
+// 2. GET SINGLE PRODUCT BY ID
 const getProductById = (req, res, next) => {
-  const productId = parseInt(req.params.id); // get id from url params
+  // Get the ID from the URL (e.g., /products/1)
+  const productId = parseInt(req.params.id);
+
+  // Find the product with this ID
   const product = products.find((p) => p.id === productId);
+
+  // If product exists, send it
   if (product) {
-    res.json(product);
+    res.json({
+      success: true,
+      data: product,
+    });
   } else {
-    res.status(404).json({ message: "Product not found" });
+    // If not found, create an error and pass it to errorMiddleware
+    const err = new Error("Product not found");
+    err.statusCode = 404;
+    next(err);
   }
 };
 
-// add a new product
-const addProduct = (req, res) => {
+// 3. ADD A NEW PRODUCT
+const addProduct = (req, res, next) => {
   const newProduct = req.body;
+
+  // Validation: Check if name exists
+  if (!newProduct.name) {
+    const err = new Error("Product name is required");
+    err.statusCode = 400;
+    return next(err);
+  }
+
+  // Validation: Check if price exists
+  if (!newProduct.price) {
+    const err = new Error("Product price is required");
+    err.statusCode = 400;
+    return next(err);
+  }
+
+  // Validation: Check if category exists
+  if (!newProduct.category) {
+    const err = new Error("Product category is required");
+    err.statusCode = 400;
+    return next(err);
+  }
+
+  // Validation: Check if price is a number
+  if (isNaN(newProduct.price)) {
+    const err = new Error("Product price must be a number");
+    err.statusCode = 400;
+    return next(err);
+  }
+
+  // Validation: Check description length (if provided)
+  if (newProduct.description && newProduct.description.length > 200) {
+    const err = new Error(
+      "Product description must be less than 200 characters"
+    );
+    err.statusCode = 400;
+    return next(err);
+  }
+
+  // Set product ID (using array length + 1)
   newProduct.id = products.length + 1;
 
-  //check body has name, price, description, category
-  if (!newProduct.name) {
-    errorMiddleware('ValidationError');
-  }
-
-  if (!newProduct.price) {
-    return res.status(400).json({ message: "Product price is required" });
-  }
-  if (!newProduct.category) {
-    return res.status(400).json({ message: "Product category is required" });
-  }
-
-  if (isNaN(newProduct.price)) {
-    return res.status(400).json({ message: "Product price must be a number" });
-  }
-  if (newProduct.description.length > 200) {
-    return res.status(400).json({
-      message: "Product description must be less than 200 characters",
-    });
-  }
-
+  // Add the new product to the array
   products.push(newProduct);
-  res.status(201).json(newProduct);
+
+  // Send success response with the new product
+  res.status(201).json({
+    success: true,
+    message: "Product added successfully",
+    data: newProduct,
+  });
 };
 
-// Put ,  update product
-
-const updateProduct = (req, res) => {
+// 4. UPDATE A PRODUCT
+const updateProduct = (req, res, next) => {
   const productId = parseInt(req.params.id);
-  const productIndex = products.findIndex((p) => p.id === productId);
-  if (productIndex === -1) {
-    return res.status(404).json({ message: "Product not found" });
-  }
-   const { name, price, description, category } = req.body;
 
-    if (name) products[productIndex].name = name; 
-    if (price) {
-      if (isNaN(price)) {
-        return res.status(400).json({ message: "Product price must be a number" });
-      }
-        products[productIndex].price = price;
+  // Find the product index
+  const productIndex = products.findIndex((p) => p.id === productId);
+
+  if (productIndex === -1) {
+    const err = new Error("Product not found");
+    err.statusCode = 404;
+    return next(err);
+  }
+
+  // Get the fields to update from request body
+  const { name, price, description, category } = req.body;
+
+  // Update only the fields that are provided
+  if (name) products[productIndex].name = name;
+
+  if (price) {
+    if (isNaN(price)) {
+      const err = new Error("Product price must be a number");
+      err.statusCode = 400;
+      return next(err);
     }
-    if (description) products[productIndex].description = description;
-    if (category) products[productIndex].category = category;
-
-  res.json(products[productIndex]);
-};
-
-// delete product
-const deleteProduct = (req, res) => {
-  const productId = parseInt(req.params.id);
-  const productIndex = products.findIndex((p) => p.id === productId);
-  if (productIndex === -1) {
-    return res.status(404).json({ message: "Product not found" });
+    products[productIndex].price = price;
   }
+
+  if (description) products[productIndex].description = description;
+  if (category) products[productIndex].category = category;
+
+  res.json({
+    success: true,
+    message: "Product updated successfully",
+    data: products[productIndex],
+  });
+};
+
+// 5. DELETE A PRODUCT
+const deleteProduct = (req, res, next) => {
+  const productId = parseInt(req.params.id);
+
+  // Find the product index
+  const productIndex = products.findIndex((p) => p.id === productId);
+
+  if (productIndex === -1) {
+    const err = new Error("Product not found");
+    err.statusCode = 404;
+    return next(err);
+  }
+
+  // Remove the product from array (splice removes 1 item starting at productIndex)
   products.splice(productIndex, 1);
-  res.json({ message: "Product deleted successfully" });
+
+  res.json({
+    success: true,
+    message: "Product deleted successfully",
+  });
 };
 
-// get products by category
-
-const getProductsByCategory = (req, res) => {
+// 6. GET PRODUCTS BY CATEGORY
+const getProductsByCategory = (req, res, next) => {
+  // Get category from URL params and convert to lowercase
   const category = req.params.category.toLowerCase();
-  const filteredProducts = products.filter((p) => p.category.toLowerCase() === category);
-  res.json(filteredProducts);
+
+  // Filter products that match the category
+  const filteredProducts = products.filter(
+    (p) => p.category.toLowerCase() === category
+  );
+
+  if (filteredProducts.length === 0) {
+    const err = new Error("No products found in this category");
+    err.statusCode = 404;
+    return next(err);
+  }
+
+  res.json({
+    success: true,
+    data: filteredProducts,
+  });
 };
 
-export { getProducts, getProductById, addProduct, updateProduct, deleteProduct, getProductsByCategory };
+// Export all functions so routes can use them
+export {
+  getProducts,
+  getProductById,
+  addProduct,
+  updateProduct,
+  deleteProduct,
+  getProductsByCategory,
+};
