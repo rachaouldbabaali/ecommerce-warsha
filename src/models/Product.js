@@ -7,7 +7,7 @@ const productSchema = new mongoose.Schema(
       required: [true, "Product name is required"],
       unique: [true, "Product name must be unique"],
       trim: true, // remove whitespace
-      maxLenghth: [100, "Product name should not exceed 100 characters"],
+      maxLength: [100, "Product name should not exceed 100 characters"],
       minlength: [2, "Product name should be at least 2 characters long"],
     },
     price: {
@@ -27,7 +27,7 @@ const productSchema = new mongoose.Schema(
     quantity: {
       type: Number,
       min: [0, "Product quantity cannot be negative"],
-      default: 0,
+      default: 1,
     },
   },
   { timestamps: true } // automatically manage createdAt and updatedAt fields

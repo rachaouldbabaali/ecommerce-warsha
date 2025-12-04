@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const cartSchema = new mongoose.Schema(
     {
+        sessionId: {
+            type: String,
+            required: true,
+            unique: true,
+        },
         items: [
             {
                 productId: {
